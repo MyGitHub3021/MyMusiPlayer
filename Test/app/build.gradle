@@ -1,0 +1,30 @@
+import com.android.build.gradle.AppExtension
+
+apply plugin: 'com.android.application'
+
+def extension = android {
+    compileSdkVersion 21
+    buildToolsVersion "23.0.1"
+
+
+
+    defaultConfig {
+        applicationId "com.example.test.test"
+
+        minSdkVersion 14
+        targetSdkVersion 17
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
+extension
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+}
