@@ -1,11 +1,25 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
+    android:layout_height="match_parent"
+    android:background="@drawable/img_single_bg"
+    tools:context="com.myown.music.MainActivity">
 
-    <TextView android:text="@string/hello_world" android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <!--TOP -->
+    <include layout="@layout/include_top" android:id="@+id/include_top_id"/>
+    <!--BOTTOM -->
+    <include layout="@layout/include_bottom" android:id="@+id/include_bottom_id"/>
+    <!-- CENTER -->
+    <com.myown.music.myown.music.views.ScrollableViewGroup
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_below="@id/include_top_id"
+        android:layout_above="@id/include_bottom_id">
+
+
+        <include layout="@layout/include_page_play" />
+        <include layout="@layout/include_page_list"/>
+        <include layout="@layout/include_page_lrc"/>
+
+    </com.myown.music.myown.music.views.ScrollableViewGroup>
 
 </RelativeLayout>

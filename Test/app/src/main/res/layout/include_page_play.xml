@@ -5,4 +5,47 @@
     android:layout_height="50dp"
     android:background="@drawable/img_playback_bg">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="歌词"
+        android:textColor="#00ff00"
+        android:gravity="center_horizontal"/>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:id="@+id/tv_duration"
+            android:layout_width="wrap_content"
+            android:layout_marginLeft="3dp"
+            android:layout_marginBottom="5dp"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#ff0000"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"/>
+        <TextView
+            android:id="@+id/tv_totalduration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#ff0000"
+            android:layout_marginBottom="5dp"
+            android:layout_marginRight="3dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:text="00:00"/>
+        <SeekBar
+            android:id="@+id/sk_duration"
+            android:layout_width="match_parent"
+            android:layout_marginRight="5dp"
+            android:layout_marginLeft="5dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_toRightOf="@id/tv_duration"
+            android:layout_toLeftOf="@id/tv_totalduration"
+            android:progressDrawable="@drawable/seek_background"
+
+            />
+
+    </RelativeLayout>
 </LinearLayout>
