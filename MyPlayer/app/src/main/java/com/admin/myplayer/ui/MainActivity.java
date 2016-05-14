@@ -1,15 +1,20 @@
-package com.admin.myplayer;
+package com.admin.myplayer.ui;
 
 import android.app.Activity;
-import android.support.v7.app.AppCompatActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import com.admin.myplayer.R;
+import com.admin.myplayer.adapter.MyAdapter;
+import com.admin.myplayer.service.MusicService;
+import com.admin.myplayer.util.MediaUtil;
+import com.admin.myplayer.view.ScrollableViewGroup;
 
 public class MainActivity extends Activity implements View.OnClickListener {
     private TextView tv_duration,tv_totalduration,tv_minilrc;
@@ -72,7 +77,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     }
     private void initData(){
-
+        MediaUtil.getSonglist(this);
+        lv_list.setAdapter(new MyAdapter(this));
     }
     private void setTopSelect(int selectedId){
         ib_top_play.setSelected(false);
@@ -94,6 +100,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
             case R.id.ib_top_lrc:
                 svg.setCurrentView(2);
                 break;
+            case R.id.ib_bottom_play: //底部播放按钮
+                Intent service = new Intent(MainActivity.this, MusicService.class);
+                service.putExtra("option","play");
+                service.putExtra("path",MediaUtil.songlist.get(0).getPath());
+                startService(service);
+                iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
         }
     }
 }

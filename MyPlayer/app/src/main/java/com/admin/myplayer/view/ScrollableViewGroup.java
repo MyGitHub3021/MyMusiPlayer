@@ -1,4 +1,4 @@
-package com.admin.myplayer;
+package com.admin.myplayer.view;
 
 import android.content.Context;
 import android.graphics.Canvas;

@@ -1,4 +1,4 @@
-package com.admin.myplayer;
+package com.admin.myplayer.ui;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.RelativeLayout;
+
+import com.admin.myplayer.R;
 
 public class InAnimActivity extends Activity {
     RelativeLayout rl;
