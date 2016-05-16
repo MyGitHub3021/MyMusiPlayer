@@ -6,6 +6,9 @@ import android.media.MediaPlayer;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
+import com.admin.myplayer.config.Constants;
+import com.admin.myplayer.util.MediaUtil;
+
 import java.io.IOException;
 
 /**
@@ -38,6 +41,7 @@ public class MusicService extends Service implements MediaPlayer.OnErrorListener
             mediaPlayer.setDataSource(path);//设置歌曲路径
             mediaPlayer.prepare();//准备播放
             mediaPlayer.start();//开始播放
+            MediaUtil.CURSTATE= Constants.STATE_PLAY;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -46,18 +50,21 @@ public class MusicService extends Service implements MediaPlayer.OnErrorListener
     public void pause(){
         if(mediaPlayer!=null && mediaPlayer.isPlaying()){
             mediaPlayer.pause();
+            MediaUtil.CURSTATE=Constants.STATE_PAUSE;
         }
     }
     //继续播放
     public void continuePlay(){
         if(mediaPlayer!=null && !mediaPlayer.isPlaying()){
             mediaPlayer.start();
+            MediaUtil.CURSTATE=Constants.STATE_PLAY;
         }
     }
     //停止播放
     public void stop(){
         if(mediaPlayer!=null){
             mediaPlayer.stop();
+            MediaUtil.CURSTATE=Constants.STATE_STOP;
         }
     }
 

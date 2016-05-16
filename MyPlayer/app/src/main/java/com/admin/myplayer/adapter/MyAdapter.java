@@ -1,6 +1,7 @@
 package com.admin.myplayer.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -71,7 +72,13 @@ public class MyAdapter extends BaseAdapter {
          */
         holder.tv_title.setText(music.getTitle());
         holder.tv_artist.setText(music.getArtist());
-
+        if (MediaUtil.POSITION==i){
+            holder.tv_title.setTextColor(Color.GREEN);
+        }else{
+            holder.tv_title.setTextColor(Color.WHITE);
+        }
+        //用i标记tv_title,用于查找
+        holder.tv_title.setTag(i);
         return view;
     }
 

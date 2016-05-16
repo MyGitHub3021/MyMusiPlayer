@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.provider.MediaStore;
 
 import com.admin.myplayer.bean.Music;
+import com.admin.myplayer.config.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,9 @@ import java.util.List;
  */
 public class MediaUtil {
     public static List<Music> songlist = new ArrayList<Music>();
+    public static int CURSTATE = Constants.STATE_STOP;
+    public static int POSITION = 0;
+
     //加载本地音乐
     public static void  getSonglist(Context context){
         songlist.clear();
