@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.util.Log;
 
 import com.admin.myplayer.bean.Music;
 import com.admin.myplayer.config.Constants;

@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Messenger;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -24,6 +26,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private ImageView iv_bottom_play,iv_bottom_model;
     private SeekBar sk_duration;
     private ScrollableViewGroup svg;
+
     private ImageButton ib_bottom_play,ib_bottom_last,ib_bottom_next,ib_bottom_model,ib_bottom_update,
                     ib_top_list,ib_top_lrc,ib_top_play,ib_top_volumn;
     private ListView lv_list;
@@ -51,6 +54,17 @@ public class MainActivity extends Activity implements View.OnClickListener {
             @Override
             public void onCurrentViewChanged(View view, int currentview) {
                 setTopSelect(topArr[currentview]);
+            }
+        });
+        lv_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                //修改curposition
+                changeColorWhite();
+                MediaUtil.POSITION=i;
+                changeColorGreen();
+                startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
             }
         });
 
@@ -104,21 +118,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 svg.setCurrentView(2);
                 break;
             case R.id.ib_bottom_play: //底部播放按钮
-                if(MediaUtil.CURSTATE== Constants.STATE_STOP){
-                    Intent service = new Intent(MainActivity.this, MusicService.class);
-                    service.putExtra("option","play");
-                    service.putExtra("path",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
-                    startService(service);
+                if(MediaUtil.CURSTATE== Constants.STATE_STOP){//默认状态为stop
+                    startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
                     iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
                 }else if (MediaUtil.CURSTATE==Constants.STATE_PLAY){
-                    Intent service = new Intent(MainActivity.this, MusicService.class);
-                    service.putExtra("option","pause");
-                    startService(service);
+                    startMediaService("pause");
                     iv_bottom_play.setImageResource(R.drawable.img_playback_bt_play);
                 }else if (MediaUtil.CURSTATE==Constants.STATE_PAUSE) {
-                    Intent service = new Intent(MainActivity.this, MusicService.class);
-                    service.putExtra("option", "continueplay");
-                    startService(service);
+                    startMediaService("continueplay");
                     iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
                 }
                 break;
@@ -127,12 +134,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     Toast.makeText(this,"this is the first song",Toast.LENGTH_SHORT).show();
                     return;
                 }else{
-                    TextView tvpretextview = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
-                    tvpretextview.setTextColor(Color.WHITE);
+                    changeColorWhite();
                     MediaUtil.POSITION--;
-                    TextView curTextView = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
-                    //再把字体颜色改变过来
-                    curTextView.setTextColor(Color.GREEN);
+                    changeColorGreen();
+                    startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                    iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
                 }
                 break;
             case  R.id.ib_bottom_next:
@@ -141,15 +147,39 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     return;
                 }else {
                     //首先找到之前绿色的textview,然后给他变成白色
-                    TextView tvpretextview = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
-                    tvpretextview.setTextColor(Color.WHITE);
+                    changeColorWhite();
                     //MediaUtils.POSITION+1,播放下一曲
                     MediaUtil.POSITION++;
-                    TextView curTextView = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
-                    //再把字体颜色改变过来
-                    curTextView.setTextColor(Color.GREEN);
+                    changeColorGreen();
+                    startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                    iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
                 }
                 break;
         }
+    }
+    public void changeColorWhite(){
+        TextView tv = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
+        if(tv!=null){
+            tv.setTextColor(Color.WHITE);
+        }
+    }
+
+    public void changeColorGreen(){
+        TextView tv = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
+        //再把字体颜色改变过来
+        if(tv!=null){
+            tv.setTextColor(Color.GREEN);
+        }
+    }
+    public void startMediaService(String option){
+        Intent service = new Intent(this,MusicService.class);
+        service.putExtra("option",option);
+        startService(service);
+    }
+    public void startMediaService(String option,String path){
+        Intent service = new Intent(this,MusicService.class);
+        service.putExtra("option",option);
+        service.putExtra("path",path);
+        startService(service);
     }
 }
