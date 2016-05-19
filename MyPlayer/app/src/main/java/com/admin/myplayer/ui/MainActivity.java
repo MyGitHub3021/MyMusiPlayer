@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Messenger;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,14 +24,36 @@ import com.admin.myplayer.util.MediaUtil;
 import com.admin.myplayer.view.ScrollableViewGroup;
 
 public class MainActivity extends Activity implements View.OnClickListener {
-    private TextView tv_duration,tv_totalduration,tv_minilrc;
-    private ImageView iv_bottom_play,iv_bottom_model;
+    private TextView tv_duration, tv_totalduration, tv_minilrc;
+    private ImageView iv_bottom_play, iv_bottom_model;
     private SeekBar sk_duration;
     private ScrollableViewGroup svg;
 
-    private ImageButton ib_bottom_play,ib_bottom_last,ib_bottom_next,ib_bottom_model,ib_bottom_update,
-                    ib_top_list,ib_top_lrc,ib_top_play,ib_top_volumn;
+    private ImageButton ib_bottom_play, ib_bottom_last, ib_bottom_next,
+            ib_bottom_model, ib_bottom_update,
+            ib_top_list, ib_top_lrc, ib_top_play, ib_top_volumn;
     private ListView lv_list;
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case Constants.MSG_PREPARED:
+                    int currentPosition = msg.arg1;
+                    int totalDuration = msg.arg2;
+                    tv_duration.setText(MediaUtil.durationtoStr(currentPosition));
+                    tv_totalduration.setText(MediaUtil.durationtoStr(totalDuration));
+                    sk_duration.setMax(totalDuration);
+                    sk_duration.setProgress(currentPosition);
+                    break;
+//                case Constants.MSG_COMPLETION:
+//
+//                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,7 +62,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
         initData();
         initListener();
     }
-    private int[] topArr = {R.id.ib_top_play,R.id.ib_top_list,R.id.ib_top_lrc,R.id.ib_top_volumn};
+
+    private int[] topArr = {R.id.ib_top_play, R.id.ib_top_list, R.id.ib_top_lrc, R.id.ib_top_volumn};
+
     private void initListener() {
         ib_bottom_play.setOnClickListener(this);
         ib_bottom_last.setOnClickListener(this);
@@ -61,10 +87,28 @@ public class MainActivity extends Activity implements View.OnClickListener {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 //修改curposition
                 changeColorWhite();
-                MediaUtil.POSITION=i;
+                MediaUtil.POSITION = i;
                 changeColorGreen();
-                startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
                 iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
+            }
+        });
+        sk_duration.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                //进度改变
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                //触摸到按钮,开始滑动
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                //停止拖动
+                sk_duration.setProgress(seekBar.getProgress());
+                startMediaService("seek",seekBar.getProgress());
             }
         });
 
@@ -72,32 +116,34 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void initView() {
-        tv_duration= (TextView) findViewById(R.id.tv_duration);
-        tv_totalduration= (TextView) findViewById(R.id.tv_totalduration);
-        tv_minilrc= (TextView) findViewById(R.id.tv_minilrc);
-        iv_bottom_model= (ImageView) findViewById(R.id.iv_bottom_model);
-        iv_bottom_play= (ImageView) findViewById(R.id.iv_bottom_play);
-        sk_duration= (SeekBar) findViewById(R.id.sk_duration);
-        svg= (ScrollableViewGroup) findViewById(R.id.svg);
-        ib_bottom_play= (ImageButton) findViewById(R.id.ib_bottom_play);
-        ib_bottom_last= (ImageButton) findViewById(R.id.ib_bottom_last);
-        ib_bottom_next= (ImageButton) findViewById(R.id.ib_bottom_next);
-        ib_bottom_model= (ImageButton) findViewById(R.id.ib_bottom_model);
-        ib_bottom_update= (ImageButton) findViewById(R.id.ib_bottom_update);
-        ib_top_list= (ImageButton) findViewById(R.id.ib_top_list);
-        ib_top_lrc= (ImageButton) findViewById(R.id.ib_top_lrc);
-        ib_top_play= (ImageButton) findViewById(R.id.ib_top_play);
-        ib_top_volumn= (ImageButton) findViewById(R.id.ib_top_volumn);
-        lv_list= (ListView) findViewById(R.id.lv_list);
+        tv_duration = (TextView) findViewById(R.id.tv_duration);
+        tv_totalduration = (TextView) findViewById(R.id.tv_totalduration);
+        tv_minilrc = (TextView) findViewById(R.id.tv_minilrc);
+        iv_bottom_model = (ImageView) findViewById(R.id.iv_bottom_model);
+        iv_bottom_play = (ImageView) findViewById(R.id.iv_bottom_play);
+        sk_duration = (SeekBar) findViewById(R.id.sk_duration);
+        svg = (ScrollableViewGroup) findViewById(R.id.svg);
+        ib_bottom_play = (ImageButton) findViewById(R.id.ib_bottom_play);
+        ib_bottom_last = (ImageButton) findViewById(R.id.ib_bottom_last);
+        ib_bottom_next = (ImageButton) findViewById(R.id.ib_bottom_next);
+        ib_bottom_model = (ImageButton) findViewById(R.id.ib_bottom_model);
+        ib_bottom_update = (ImageButton) findViewById(R.id.ib_bottom_update);
+        ib_top_list = (ImageButton) findViewById(R.id.ib_top_list);
+        ib_top_lrc = (ImageButton) findViewById(R.id.ib_top_lrc);
+        ib_top_play = (ImageButton) findViewById(R.id.ib_top_play);
+        ib_top_volumn = (ImageButton) findViewById(R.id.ib_top_volumn);
+        lv_list = (ListView) findViewById(R.id.lv_list);
 
         ib_top_play.setSelected(true);
 
     }
-    private void initData(){
+
+    private void initData() {
         MediaUtil.getSonglist(this);
         lv_list.setAdapter(new MyAdapter(this));
     }
-    private void setTopSelect(int selectedId){
+
+    private void setTopSelect(int selectedId) {
         ib_top_play.setSelected(false);
         ib_top_list.setSelected(false);
         ib_top_lrc.setSelected(false);
@@ -105,9 +151,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         findViewById(selectedId).setSelected(true);
     }
+
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.ib_top_play:
                 svg.setCurrentView(0);
                 break;
@@ -118,68 +165,93 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 svg.setCurrentView(2);
                 break;
             case R.id.ib_bottom_play: //底部播放按钮
-                if(MediaUtil.CURSTATE== Constants.STATE_STOP){//默认状态为stop
-                    startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                if (MediaUtil.CURSTATE == Constants.STATE_STOP) {//默认状态为stop
+                    startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
                     iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
-                }else if (MediaUtil.CURSTATE==Constants.STATE_PLAY){
+                } else if (MediaUtil.CURSTATE == Constants.STATE_PLAY) {
                     startMediaService("pause");
                     iv_bottom_play.setImageResource(R.drawable.img_playback_bt_play);
-                }else if (MediaUtil.CURSTATE==Constants.STATE_PAUSE) {
+                } else if (MediaUtil.CURSTATE == Constants.STATE_PAUSE) {
                     startMediaService("continueplay");
                     iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
                 }
                 break;
             case R.id.ib_bottom_last:
-                if(MediaUtil.POSITION<=0){
-                    Toast.makeText(this,"this is the first song",Toast.LENGTH_SHORT).show();
+                if (MediaUtil.POSITION <= 0) {
+                    Toast.makeText(this, "this is the first song", Toast.LENGTH_SHORT).show();
                     return;
-                }else{
+                } else {
                     changeColorWhite();
                     MediaUtil.POSITION--;
                     changeColorGreen();
-                    startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                    startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
                     iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
                 }
                 break;
-            case  R.id.ib_bottom_next:
-                if(MediaUtil.POSITION>=MediaUtil.songlist.size()-1){
-                    Toast.makeText(this,"this is the last song",Toast.LENGTH_SHORT).show();
-                    return;
-                }else {
+            case R.id.ib_bottom_next:
+                changeColorWhite();
+                if (MediaUtil.POSITION >= MediaUtil.songlist.size() - 1) {
+//                    Toast.makeText(this, "this is the last song", Toast.LENGTH_SHORT).show();
+                    MediaUtil.POSITION=0;
+                } else {
                     //首先找到之前绿色的textview,然后给他变成白色
-                    changeColorWhite();
                     //MediaUtils.POSITION+1,播放下一曲
                     MediaUtil.POSITION++;
-                    changeColorGreen();
-                    startMediaService("play",MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
-                    iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
                 }
+                    changeColorGreen();
+                    startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                    iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
+
+//                if (MediaUtil.POSITION >= MediaUtil.songlist.size() - 1) {
+//                    Toast.makeText(this, "this is the last song", Toast.LENGTH_SHORT).show();
+//                } else {
+//                    //首先找到之前绿色的textview,然后给他变成白色
+//                    changeColorWhite();
+//                    //MediaUtils.POSITION+1,播放下一曲
+//                    MediaUtil.POSITION++;
+//                    changeColorGreen();
+//                    startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+//                    iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
+//                }
                 break;
         }
     }
-    public void changeColorWhite(){
+
+    public void changeColorWhite() {
         TextView tv = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
-        if(tv!=null){
+        if (tv != null) {
             tv.setTextColor(Color.WHITE);
         }
     }
 
-    public void changeColorGreen(){
+    public void changeColorGreen() {
         TextView tv = (TextView) lv_list.findViewWithTag(MediaUtil.POSITION);
         //再把字体颜色改变过来
-        if(tv!=null){
+        if (tv != null) {
             tv.setTextColor(Color.GREEN);
         }
     }
-    public void startMediaService(String option){
-        Intent service = new Intent(this,MusicService.class);
-        service.putExtra("option",option);
+
+    public void startMediaService(String option) {
+        Intent service = new Intent(this, MusicService.class);
+        service.putExtra("messenger", new Messenger(handler));
+        service.putExtra("option", option);
         startService(service);
     }
-    public void startMediaService(String option,String path){
-        Intent service = new Intent(this,MusicService.class);
-        service.putExtra("option",option);
-        service.putExtra("path",path);
+
+    public void startMediaService(String option, String path) {
+        Intent service = new Intent(this, MusicService.class);
+        service.putExtra("messenger", new Messenger(handler));
+        service.putExtra("option", option);
+        service.putExtra("path", path);
+        startService(service);
+    }
+
+    public void startMediaService(String option, int progress) {
+        Intent service = new Intent(this, MusicService.class);
+        service.putExtra("messenger", new Messenger(handler));
+        service.putExtra("option", option);
+        service.putExtra("progress", progress);
         startService(service);
     }
 }
