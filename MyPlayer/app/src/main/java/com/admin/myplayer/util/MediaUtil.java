@@ -11,6 +11,7 @@ import android.util.Log;
 import com.admin.myplayer.bean.Music;
 import com.admin.myplayer.config.Constants;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,5 +64,19 @@ public class MediaUtil {
             }
         }
         return result;
+    }
+
+    public  static File getlrcFile(String path){
+        File file;
+        String lrcName = path.replace(".mp3",".lrc");//找歌曲名称相同的lrc文件
+        file = new File(lrcName);
+        if(!file.exists()){
+            lrcName = path.replace(".mp3",".txt");//歌词也可能是txt文件
+            file = new File(lrcName);
+            if (!file.exists()){
+                return null;
+            }
+        }
+        return  file;
     }
 }

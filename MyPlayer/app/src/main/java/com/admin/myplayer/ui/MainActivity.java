@@ -18,16 +18,21 @@ import android.widget.Toast;
 
 import com.admin.myplayer.R;
 import com.admin.myplayer.adapter.MyAdapter;
+import com.admin.myplayer.bean.LrcUtil;
 import com.admin.myplayer.config.Constants;
 import com.admin.myplayer.service.MusicService;
 import com.admin.myplayer.util.MediaUtil;
 import com.admin.myplayer.view.ScrollableViewGroup;
+
+import java.io.File;
 
 public class MainActivity extends Activity implements View.OnClickListener {
     private TextView tv_duration, tv_totalduration, tv_minilrc;
     private ImageView iv_bottom_play, iv_bottom_model;
     private SeekBar sk_duration;
     private ScrollableViewGroup svg;
+    MainActivity instance;
+    LrcUtil mlrcutil;
 
     private ImageButton ib_bottom_play, ib_bottom_last, ib_bottom_next,
             ib_bottom_model, ib_bottom_update,
@@ -44,6 +49,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     tv_totalduration.setText(MediaUtil.durationtoStr(totalDuration));
                     sk_duration.setMax(totalDuration);
                     sk_duration.setProgress(currentPosition);
+                    if (mlrcutil==null){
+                        mlrcutil = new LrcUtil(instance);
+                    }
+                    //序列化歌词
+                    File f = MediaUtil.getlrcFile(MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                    mlrcutil.ReadLRC(f);
+                    //刷新
+                    mlrcutil.RefreshLRC(currentPosition);
                     break;
 //                case Constants.MSG_COMPLETION:
 //
@@ -58,6 +71,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        instance = this;
         initView();
         initData();
         initListener();
@@ -105,10 +119,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
             }
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                //停止拖动
+            public void onStopTrackingTouch(SeekBar seekBar) {//停止拖拽
                 sk_duration.setProgress(seekBar.getProgress());
-                startMediaService("seek",seekBar.getProgress());
+                startMediaService("进度", seekBar.getProgress());
+                //音乐播放器,跳转到指定的位置播放
             }
         });
 
@@ -253,5 +267,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
         service.putExtra("option", option);
         service.putExtra("progress", progress);
         startService(service);
+    }
+
+    public void setMiniLrc(String lrcString) {
+        tv_minilrc.setText(lrcString);
     }
 }

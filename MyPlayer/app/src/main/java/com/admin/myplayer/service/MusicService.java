@@ -100,7 +100,7 @@ public class MusicService extends Service implements MediaPlayer.OnErrorListener
             continuePlay();
         } else if ("stop".equals(option)) {
             stop();
-        } else if("seek".equals(option)){
+        } else if("进度".equals(option)){
             int progress = intent.getIntExtra("progress",-1);
             seekPlay(progress);
         }
