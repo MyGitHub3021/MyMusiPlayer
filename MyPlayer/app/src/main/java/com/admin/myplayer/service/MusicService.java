@@ -76,15 +76,20 @@ public class MusicService extends Service implements MediaPlayer.OnErrorListener
         if (mediaPlayer != null) {
             mediaPlayer.stop();
             MediaUtil.CURSTATE = Constants.STATE_STOP;
+            if (mtimer != null) {
+                mtimer.cancel();
+                mtimer = null;
+            }
         }
     }
 
     //跳转到指定进度
-    public  void seekPlay(int progress){
-        if(mediaPlayer!=null && mediaPlayer.isPlaying()){
-                mediaPlayer.seekTo(progress);
+    public void seekPlay(int progress) {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.seekTo(progress);
         }
     }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String option = intent.getStringExtra("option");
@@ -100,8 +105,8 @@ public class MusicService extends Service implements MediaPlayer.OnErrorListener
             continuePlay();
         } else if ("stop".equals(option)) {
             stop();
-        } else if("进度".equals(option)){
-            int progress = intent.getIntExtra("progress",-1);
+        } else if ("进度".equals(option)) {
+            int progress = intent.getIntExtra("progress", -1);
             seekPlay(progress);
         }
         return super.onStartCommand(intent, flags, startId);
@@ -110,6 +115,10 @@ public class MusicService extends Service implements MediaPlayer.OnErrorListener
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (mtimer!=null){
+            mtimer.cancel();
+            mtimer=null;
+        }
     }
 
     @Override
@@ -146,6 +155,14 @@ public class MusicService extends Service implements MediaPlayer.OnErrorListener
 
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
-
+        try {
+            //service发送通知,告诉Activity歌曲播放完了
+            Message msg = Message.obtain();
+            msg.what = Constants.MSG_COMPLETION;
+            //发送消息
+            mMessenger.send(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

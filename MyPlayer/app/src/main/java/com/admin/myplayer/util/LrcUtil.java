@@ -1,4 +1,4 @@
-package com.admin.myplayer.bean;
+package com.admin.myplayer.util;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

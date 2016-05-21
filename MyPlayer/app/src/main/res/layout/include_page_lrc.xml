@@ -5,13 +5,13 @@
 <LinearLayout
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <TextView
-        android:id="@+id/iv_lrc"
+    <com.admin.myplayer.view.LyricShow
+        android:id="@+id/ls_lrc"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="歌词"
         android:textSize="16sp"
         android:textColor="#00ff00"
-        android:gravity="center"/>
+        android:gravity="center">
+        </com.admin.myplayer.view.LyricShow>
 </LinearLayout>
  </com.admin.myplayer.view.ViewGroupHook>

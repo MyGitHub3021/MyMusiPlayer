@@ -1,9 +1,17 @@
 package com.admin.myplayer.ui;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Messenger;
@@ -18,21 +26,29 @@ import android.widget.Toast;
 
 import com.admin.myplayer.R;
 import com.admin.myplayer.adapter.MyAdapter;
-import com.admin.myplayer.bean.LrcUtil;
+import com.admin.myplayer.util.LrcUtil;
 import com.admin.myplayer.config.Constants;
 import com.admin.myplayer.service.MusicService;
 import com.admin.myplayer.util.MediaUtil;
+import com.admin.myplayer.view.LyricShow;
 import com.admin.myplayer.view.ScrollableViewGroup;
 
+import org.xmlpull.v1.XmlPullParser;
+
 import java.io.File;
+import java.net.HttpURLConnection;
+import java.util.Random;
 
 public class MainActivity extends Activity implements View.OnClickListener {
     private TextView tv_duration, tv_totalduration, tv_minilrc;
     private ImageView iv_bottom_play, iv_bottom_model;
     private SeekBar sk_duration;
     private ScrollableViewGroup svg;
+    private LyricShow ls;
     MainActivity instance;
+    MyBroadcastReceiver receiver;
     LrcUtil mlrcutil;
+    MyAdapter adapter;
 
     private ImageButton ib_bottom_play, ib_bottom_last, ib_bottom_next,
             ib_bottom_model, ib_bottom_update,
@@ -49,18 +65,59 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     tv_totalduration.setText(MediaUtil.durationtoStr(totalDuration));
                     sk_duration.setMax(totalDuration);
                     sk_duration.setProgress(currentPosition);
-                    if (mlrcutil==null){
+                    if (mlrcutil == null) {
                         mlrcutil = new LrcUtil(instance);
                     }
                     //序列化歌词
                     File f = MediaUtil.getlrcFile(MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
                     mlrcutil.ReadLRC(f);
-                    //刷新
+                    //使用刷新lrc功能
                     mlrcutil.RefreshLRC(currentPosition);
+
+                    //设置集合
+                    ls.SetTimeLrc(mlrcutil.getLrcList());
+                    //更新滚动歌词
+                    ls.SetNowPlayIndex(currentPosition);
+                    //
                     break;
-//                case Constants.MSG_COMPLETION:
-//
-//                    break;
+                case Constants.MSG_COMPLETION:
+                    //歌曲播放完了,根据歌曲当前的播放模式做相应的处理
+                    if (MediaUtil.CURMODEL == Constants.MODEL_NORMAL) {
+                        if (MediaUtil.POSITION < MediaUtil.songlist.size() - 1) {
+                            changeColorWhite();
+                            MediaUtil.POSITION++;
+                            changeColorGreen();
+                            startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                        } else {
+                            startMediaService("stop");
+                        }
+
+                    } else if (MediaUtil.CURMODEL == Constants.MODEL_RANDOM) {
+                        Random random = new Random();
+                        int pos = random.nextInt(MediaUtil.songlist.size());
+                        changeColorWhite();
+                        MediaUtil.POSITION = pos;
+                        changeColorGreen();
+                        startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                    } else if (MediaUtil.CURMODEL == Constants.MODEL_REPEAT) {
+                        if (MediaUtil.POSITION < MediaUtil.songlist.size() - 1) {
+                            changeColorWhite();
+                            MediaUtil.POSITION++;
+                            changeColorGreen();
+                            startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                        } else {
+                            changeColorWhite();
+                            MediaUtil.POSITION = 0;
+                            changeColorWhite();
+                            startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                        }
+
+                    } else if (MediaUtil.CURMODEL == Constants.MODEL_SINGLE) {
+                        //单曲循环,一直播放当前的同一首歌曲
+                        startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                    }
+
+                    break;
                 default:
                     break;
             }
@@ -72,6 +129,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         instance = this;
+        receiver = new MyBroadcastReceiver();
         initView();
         initData();
         initListener();
@@ -147,7 +205,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         ib_top_play = (ImageButton) findViewById(R.id.ib_top_play);
         ib_top_volumn = (ImageButton) findViewById(R.id.ib_top_volumn);
         lv_list = (ListView) findViewById(R.id.lv_list);
-
+        ls = (LyricShow) findViewById(R.id.ls_lrc);
         ib_top_play.setSelected(true);
 
     }
@@ -206,15 +264,15 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 changeColorWhite();
                 if (MediaUtil.POSITION >= MediaUtil.songlist.size() - 1) {
 //                    Toast.makeText(this, "this is the last song", Toast.LENGTH_SHORT).show();
-                    MediaUtil.POSITION=0;
+                    MediaUtil.POSITION = 0;
                 } else {
                     //首先找到之前绿色的textview,然后给他变成白色
                     //MediaUtils.POSITION+1,播放下一曲
                     MediaUtil.POSITION++;
                 }
-                    changeColorGreen();
-                    startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
-                    iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
+                changeColorGreen();
+                startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
+                iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
 
 //                if (MediaUtil.POSITION >= MediaUtil.songlist.size() - 1) {
 //                    Toast.makeText(this, "this is the last song", Toast.LENGTH_SHORT).show();
@@ -227,6 +285,38 @@ public class MainActivity extends Activity implements View.OnClickListener {
 //                    startMediaService("play", MediaUtil.songlist.get(MediaUtil.POSITION).getPath());
 //                    iv_bottom_play.setImageResource(R.drawable.appwidget_pause);
 //                }
+                break;
+            case R.id.ib_bottom_model:
+                if (MediaUtil.CURMODEL == Constants.MODEL_NORMAL) {
+                    //如果当前是顺序播放,点击后模式变成随机播放
+                    MediaUtil.CURMODEL = Constants.MODEL_RANDOM;
+                    //更新ui
+                    iv_bottom_model.setImageResource(R.drawable.icon_playmode_shuffle);
+                    Toast.makeText(this, "随机播放", Toast.LENGTH_SHORT).show();
+                } else if (MediaUtil.CURMODEL == Constants.MODEL_RANDOM) {
+                    //如果当前是随机播放,点击后模式变成重复播放
+                    MediaUtil.CURMODEL = Constants.MODEL_REPEAT;
+                    iv_bottom_model.setImageResource(R.drawable.icon_playmode_repeat);
+                    Toast.makeText(this, "重复播放", Toast.LENGTH_SHORT).show();
+                } else if (MediaUtil.CURMODEL == Constants.MODEL_REPEAT) {
+                    //如果当前是重复播放,点击后模式变成单曲播放
+                    MediaUtil.CURMODEL = Constants.MODEL_SINGLE;
+                    iv_bottom_model.setImageResource(R.drawable.icon_playmode_single);
+                    Toast.makeText(this, "单曲播放", Toast.LENGTH_SHORT).show();
+                } else if (MediaUtil.CURMODEL == Constants.MODEL_SINGLE) {
+                    //如果当前为单曲播放,点击后转变为顺序播放
+                    MediaUtil.CURMODEL = Constants.MODEL_NORMAL;
+                    iv_bottom_model.setImageResource(R.drawable.icon_playmode_normal);
+                    Toast.makeText(this, "顺序播放", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            case R.id.ib_bottom_update:
+                refresh();
+                break;
+            case R.id.ib_top_volumn:
+                AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+                int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume / 2, AudioManager.FLAG_PLAY_SOUND);
                 break;
         }
     }
@@ -271,5 +361,52 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     public void setMiniLrc(String lrcString) {
         tv_minilrc.setText(lrcString);
+    }
+
+    public void refresh() {
+        //接收系统扫描结束的广播
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_MEDIA_SCANNER_FINISHED);
+        filter.addDataScheme("file");
+        registerReceiver(receiver, filter);
+        //发送广播让系统扫描更新媒体库
+        Intent intent = new Intent(Intent.ACTION_MEDIA_MOUNTED);
+        intent.setData(Uri.parse("file://" + Environment.getExternalStorageDirectory()));
+        sendBroadcast(intent);
+    }
+
+    class MyBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            unregisterReceiver(receiver);
+            //重新更新songlist更新歌曲列表需要查询数据库,这是个耗时操作,所以不能放在onReceive方法中执行
+            new MyScanTask().execute();
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    class MyScanTask extends AsyncTask<Void, Void, Void> {
+        ProgressDialog dialog;
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            MediaUtil.getSonglist(MainActivity.this);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            //方法执行之后
+            dialog.dismiss();
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            //方法执行之前
+            dialog = ProgressDialog.show(MainActivity.this, "提示", "努力加载中");
+        }
     }
 }

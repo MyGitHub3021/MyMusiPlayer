@@ -22,6 +22,7 @@ public class MediaUtil {
     public static List<Music> songlist = new ArrayList<Music>();
     public static int CURSTATE = Constants.STATE_STOP;
     public static int POSITION = 0;
+    public static int CURMODEL = Constants.MODEL_NORMAL;
 
     //加载本地音乐
     public static void getSonglist(Context context) {
